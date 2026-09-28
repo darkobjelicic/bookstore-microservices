@@ -69,6 +69,15 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
-  # NOTE: cross-repo image-tag bump (deploy/overlays/kind/kustomization.yaml
-  # in chaos-engineering-sandbox) is not wired up yet — deferred to a
-  # repository_dispatch step here once the receiving workflow exists there.
+  notify:
+    name: Notify chaos-engineering-sandbox
+    runs-on: ubuntu-latest
+    needs: push
+    steps:
+      - name: Repository dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CHAOS_SANDBOX_DISPATCH_TOKEN }}
+          repository: darkobjelicic/chaos-engineering-sandbox
+          event-type: bookstore-image-published
+          client-payload: '{"sha": "${{ github.sha }}"}'

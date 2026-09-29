@@ -17,7 +17,7 @@ export default function Login(){
       const params = new URLSearchParams()
       params.append('username', email)
       params.append('password', password)
-      const r = await axios.post('http://api.bookstore.local/auth/login', params, {
+      const r = await axios.post('/api/auth/login', params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       })
       const token = r.data.access_token

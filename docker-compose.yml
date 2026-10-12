@@ -24,6 +24,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata_auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-book:
     image: postgres:14
@@ -33,6 +38,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata_book:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-inventory:
     image: postgres:14
@@ -42,6 +52,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata_inventory:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres-order:
     image: postgres:14
@@ -51,11 +66,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata_order:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     build: ./services/auth
     depends_on:
-      - postgres-auth
+      postgres-auth:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-auth:5432/auth_db
       SECRET_KEY: ${SECRET_KEY:-supersecretdevkey}
@@ -65,7 +86,8 @@ services:
   book-service:
     build: ./services/book
     depends_on:
-      - postgres-book
+      postgres-book:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-book:5432/book_db
     ports:
@@ -75,7 +97,7 @@ services:
     build: ./services/inventory
     depends_on:
       postgres-inventory:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     environment:
@@ -88,7 +110,7 @@ services:
     build: ./services/order
     depends_on:
       postgres-order:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     environment:
@@ -118,6 +140,8 @@ services:
 
   frontend:
     build: ./frontend
+    depends_on:
+      - api-gateway
     ports:
       - "3000:8080"
 
